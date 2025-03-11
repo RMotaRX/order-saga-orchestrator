@@ -1,0 +1,46 @@
+server:
+  compression:
+    enabled: true
+  port: ${PORT:8091}
+
+spring:
+  application:
+    name: saga-payment-ms
+  output:
+    ansi:
+      enabled: ALWAYS
+  banner:
+    location: classpath:/config/banner/saga-payment-ms.txt
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BROKER:localhost:9092}
+    topic:
+      orchestrator: orchestrator
+      payment-success: payment-success
+      payment-fail: payment-fail
+    consumer:
+      group-id: payment-group
+      auto-offset-reset: latest
+    partitions:
+      partition-count: 1
+    replica:
+      replica-count: 1
+
+  datasource:
+    driver-class-name: ${DRIVER_CLASS_NAME:org.postgresql.Driver}
+    url: ${DATABASE_URL:jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5433}/${DATABASE_NAME:pagamentos}}
+    username: ${DATABASE_USERNAME:root}
+    password: ${DATABASE_PASSWORD:postgres}
+
+  jpa:
+    hibernate:
+      ddl-auto: 'create-drop'
+    properties:
+      hibernate:
+        dialect: ${DATABASE_DIALECT:org.hibernate.dialect.PostgreSQLDialect}
+
+logging:
+  level:
+    org:
+      apache:
+        kafka: off

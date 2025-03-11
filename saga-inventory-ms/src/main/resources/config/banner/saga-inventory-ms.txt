@@ -1,0 +1,4 @@
+
+              ${AnsiBackground.RED}${AnsiColor.BLACK}SAGA-INVENTORY-MS${AnsiBackground.DEFAULT}
+ ${AnsiColor.YELLOW}>>> ${AnsiStyle.UNDERLINE}${application.title}saga-inventory-ms - 0.1.0-SNAPSHOT${application.version}${application.formatted-version}${AnsiStyle.NORMAL}${AnsiColor.YELLOW} <<<
+${AnsiStyle.FAINT}${AnsiColor.RED}:: Created at Spring Boot ${spring-boot.version} ${spring-boot.formatted-version} ::${AnsiStyle.NORMAL}${AnsiColor.DEFAULT}

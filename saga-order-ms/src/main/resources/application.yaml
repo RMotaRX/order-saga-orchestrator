@@ -1,0 +1,37 @@
+server:
+  compression:
+    enabled: true
+  port: ${PORT:3000}
+
+spring:
+  application:
+    name: saga-orders-ms
+  output:
+    ansi:
+      enabled: ALWAYS
+  banner:
+    location: classpath:/config/banner/saga-order-ms.txt
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BROKER:localhost:9092}
+    topic:
+      start-saga: start-saga
+      notify-ending: notify-ending
+    consumer:
+      group-id: order-group
+      auto-offset-reset: latest
+    partitions:
+      partition-count: 1
+    replica:
+      replica-count: 1
+
+    data:
+      mongodb:
+        database: ${DATABASE:orders}
+        uri: ${MONGO_DB_URI:mongodb://${DATABASE_USERNAME:root}:${DATABASE_PASSWORD:mongodb}@localhost:27017}
+
+  logging:
+    level:
+      org:
+        apache:
+          kafka: OFF
