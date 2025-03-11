@@ -1,0 +1,94 @@
+services:
+  order-db:
+    image: mongo:latest
+    container_name: order-db
+    restart: always
+    networks:
+      - orchestrator-saga
+    env_file:
+      - .env
+    ports:
+      - 27017:27017
+
+  product-db:
+    image: postgres:latest
+    container_name: product-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${PRODUCT_DB_NAME}
+      POSTGRES_USER: ${PRODUCT_DB_USER}
+      POSTGRES_PASSWORD: ${PRODUCT_DB_PASSWORD}
+      PGDATA: ${PRODUCT_DB_DATA_PATH}
+    ports:
+      - "5432:5432"
+    networks:
+      - orchestrator-saga
+
+  payment-db:
+    container_name: payment-db
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_DB: ${PAYMENT_DB_NAME}
+      POSTGRES_USER: ${PAYMENT_DB_USER}
+      POSTGRES_PASSWORD: ${PAYMENT_DB_PASSWORD}
+      PGDATA: ${PAYMENT_DB_DATA_PATH}
+    ports:
+      - "5433:5432"
+    networks:
+      - orchestrator-saga
+
+  inventory-db:
+    container_name: inventory-db
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_DB: ${INVENTORY_DB_NAME}
+      POSTGRES_USER: ${INVENTORY_DB_USER}
+      POSTGRES_PASSWORD: ${INVENTORY_DB_PASSWORD}
+      PGDATA: ${INVENTORY_DB_DATA_PATH}
+    ports:
+      - "5434:5432"
+    networks:
+      - orchestrator-saga
+
+  kafka:
+    container_name: kafka
+    image: obsidiandynamics/kafka
+    restart: "no"
+    environment:
+      KAFKA_LISTENERS: ${KAFKA_LISTENERS}
+      KAFKA_ADVERTISED_LISTENERS: ${KAFKA_ADVERTISED_LISTENERS}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: ${KAFKA_LISTENER_SECURITY_PROTOCOL_MAP}
+      KAFKA_INTER_BROKER_LISTENER_NAME: ${KAFKA_INTER_BROKER_LISTENER_NAME}
+      KAFKA_ZOOKEEPER_SESSION_TIMEOUT_MS: ${KAFKA_ZOOKEEPER_SESSION_TIMEOUT_MS}
+      KAFKA_RESTART_ATTEMPTS: ${KAFKA_RESTART_ATTEMPTS}
+      KAFKA_RESTART_DELAY: ${KAFKA_RESTART_DELAY}
+      ZOOKEEPER_AUTOPURGE_PURGE_INTERVAL: ${ZOOKEEPER_AUTOPURGE_PURGE_INTERVAL}
+    ports:
+      - "2181:2181"
+      - "9092:9092"
+    networks:
+      - orchestrator-saga
+    volumes:
+      - ./data/kafka/data:/var/lib/kafka/data
+
+  redpanda-console:
+    container_name: redpanda
+    image: docker.redpanda.com/redpandadata/console:v2.3.8
+    restart: on-failure
+    entrypoint: /bin/sh
+    command: -c "mkdir -p /tmp && echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"
+    environment:
+      CONFIG_FILEPATH: ${CONFIG_FILEPATH}
+      CONSOLE_CONFIG_FILE: ${CONSOLE_CONFIG_FILE}
+    ports:
+      - "8081:8080"
+    networks:
+      - orchestrator-saga
+    depends_on:
+      - "kafka"
+
+networks:
+  orchestrator-saga:
+    driver: bridge

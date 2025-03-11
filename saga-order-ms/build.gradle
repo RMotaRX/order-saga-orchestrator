@@ -1,0 +1,60 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.3.9'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'br.com.order.saga.orchestrator.api'
+version = '0.1.0-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+ext {
+	developerName = project.properties['developerName']
+	developerEmail = project.properties['developerEmail']
+	developerLinkedin = project.properties['developerLinkedin']
+	developerGitHub = project.properties['developerGitHub']
+
+	springDocOpenApiStarterWebMvcUIVersion = '2.0.4'
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.kafka:spring-kafka'
+	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springDocOpenApiStarterWebMvcUIVersion}"
+	compileOnly 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.kafka:spring-kafka-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+tasks.register('printDeveloperInfo')  {
+	doLast {
+		println "Developer": ${developerName}
+		println "Email": ${developerEmail}
+		println "Linkedin": ${developerLinkedin}
+		println "Github": ${developerGitHub}
+	}
+}
