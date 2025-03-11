@@ -1,0 +1,52 @@
+server:
+  compression:
+    enabled: true
+  port: ${PORT:8090}
+
+spring:
+  application:
+    name: saga-product-ms
+  output:
+    ansi:
+      enabled: ALWAYS
+  banner:
+    location: classpath:/config/banner/saga-product-ms.txt
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BROKER:localhost:9092}
+    topic:
+      orchestrator: orchestrator
+      product-validation-success: product-validation-success
+      product-validation-fail: product-validation-fail
+    consumer:
+      group-id: product-validation-group
+      auto-offset-reset: latest
+    partitions:
+      partition-count: 1
+    replica:
+      replica-count: 1
+
+  datasource:
+    driver-class-name: ${DRIVER_CLASS_NAME:org.postgresql.Driver}
+    url: ${DATABASE_URL:jdbc:postgresql://${PRODUCT_DATABASE_HOST:localhost}:${PRODUCT_DATABASE_PORT:5432}/${PRODUCT_DATABASE_NAME:produtos}}
+    username: ${PRODUCT_DATABASE_USER:root}
+    password: ${PRODUCT_DATABASE_PASSWORD:postgres}
+
+  flyway:
+    .enabled: true
+    locations:
+      - classpath:db/migration
+    baseline-on-migrate: true
+
+  jpa:
+    hibernate:
+      ddl-auto: 'create-drop'
+    properties:
+      hibernate:
+        dialect: ${DATABASE_DIALECT:org.hibernate.dialect.PostgreSQLDialect}
+
+logging:
+  level:
+    org:
+      apache:
+        kafka: off

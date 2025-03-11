@@ -1,0 +1,29 @@
+server:
+  compression:
+    enabled: true
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: saga-orchestrator-ms
+  output:
+    ansi:
+      enabled: ALWAYS
+  banner:
+    location: classpath:/config/banner/saga-orchestrator-ms.txt
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BROKER:localhost:9092}
+    consumer:
+      group-id: orchestrator-group
+      auto-offset-reset: latest
+    partitions:
+      partition-count: 1
+    replica:
+      replica-count: 1
+
+logging:
+  level:
+    org:
+      apache:
+        kafka: off

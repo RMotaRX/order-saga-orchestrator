@@ -1,0 +1,190 @@
+services:
+  order-db:
+    image: mongo:latest
+    container_name: order-db
+    restart: always
+    networks:
+      - orchestrator-saga
+    env_file:
+      - .env
+    ports:
+      - 27017:27017
+
+  product-db:
+    image: postgres:latest
+    container_name: product-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${PRODUCT_DATABASE_NAME}
+      POSTGRES_USER: ${PRODUCT_DATABASE_USER}
+      POSTGRES_PASSWORD: ${PRODUCT_DATABASE_PASSWORD}
+      PGDATA: ${PRODUCT_DB_DATA_PATH}
+    ports:
+      - "5432:5432"
+    networks:
+      - orchestrator-saga
+
+  payment-db:
+    container_name: payment-db
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_DB: ${PAYMENT_DATABASE_NAME}
+      POSTGRES_USER: ${PAYMENT_DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${PAYMENT_DATABASE_PASSWORD}
+      PGDATA: ${PAYMENT_DB_DATA_PATH}
+    ports:
+      - "5433:5432"
+    networks:
+      - orchestrator-saga
+
+  inventory-db:
+    container_name: inventory-db
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_DB: ${INVENTORY_DATABASE_NAME}
+      POSTGRES_USER: ${INVENTORY_DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${INVENTORY_DATABASE_PASSWORD}
+      PGDATA: ${INVENTORY_DB_DATA_PATH}
+    ports:
+      - "5434:5432"
+    networks:
+      - orchestrator-saga
+
+  kafka:
+    container_name: kafka
+    image: obsidiandynamics/kafka
+    restart: "no"
+    environment:
+      KAFKA_LISTENERS: ${KAFKA_LISTENERS}
+      KAFKA_ADVERTISED_LISTENERS: ${KAFKA_ADVERTISED_LISTENERS}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: ${KAFKA_LISTENER_SECURITY_PROTOCOL_MAP}
+      KAFKA_INTER_BROKER_LISTENER_NAME: ${KAFKA_INTER_BROKER_LISTENER_NAME}
+      KAFKA_ZOOKEEPER_SESSION_TIMEOUT_MS: ${KAFKA_ZOOKEEPER_SESSION_TIMEOUT_MS}
+      KAFKA_RESTART_ATTEMPTS: ${KAFKA_RESTART_ATTEMPTS}
+      KAFKA_RESTART_DELAY: ${KAFKA_RESTART_DELAY}
+      ZOOKEEPER_AUTOPURGE_PURGE_INTERVAL: ${ZOOKEEPER_AUTOPURGE_PURGE_INTERVAL}
+    ports:
+      - "2181:2181"
+      - "9092:9092"
+    networks:
+      - orchestrator-saga
+    volumes:
+      - ./data/kafka/data:/var/lib/kafka/data
+
+  redpanda-console:
+    container_name: redpanda
+    image: docker.redpanda.com/redpandadata/console:v2.3.8
+    restart: on-failure
+    entrypoint: /bin/sh
+    command: -c "mkdir -p /tmp && echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"
+    environment:
+      CONFIG_FILEPATH: ${CONFIG_FILEPATH}
+      CONSOLE_CONFIG_FILE: ${CONSOLE_CONFIG_FILE}
+    ports:
+      - "8081:8080"
+    networks:
+      - orchestrator-saga
+    depends_on:
+      - "kafka"
+
+  order-service:
+    build: "./saga-order-ms"
+    container_name: order-service
+    restart: always
+    environment:
+      KAFKA_BROKER: ${KAFKA_BROKER}
+      MONGO_INITDB_URI: ${MONGO_INITDB_URI}
+    ports:
+      - 3000:3000
+    networks:
+      - orchestrator-saga
+    depends_on:
+      - "order-db"
+      - "kafka"
+
+  orchestrator-service:
+    build: "./saga-orchestrator-ms"
+    container_name: orchestrator-service
+    restart: always
+    environment:
+      KAFKA_BROKER: ${KAFKA_BROKER}
+    ports:
+      - 8080:8080
+    networks:
+      - orchestrator-saga
+    depends_on:
+      - "kafka"
+
+  product-service:
+    build: "./saga-product-ms"
+    container_name: product-service
+    restart: always
+    environment:
+      KAFKA_BROKER: ${KAFKA_BROKER}
+      PRODUCT_DATABASE_HOST: ${PRODUCT_DATABASE_HOST}
+      PRODUCT_DATABASE_PORT: ${PRODUCT_DATABASE_PORT}
+      PRODUCT_DATABASE_NAME: ${PRODUCT_DATABASE_NAME}
+      PRODUCT_DATABASE_USER: ${PRODUCT_DATABASE_USER}
+      PRODUCT_DATABASE_PASSWORD: ${PRODUCT_DATABASE_PASSWORD}
+      SPRING_DATASOURCE_URL: ${PRODUCT_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+    ports:
+      - 8090:8090
+    networks:
+      - orchestrator-saga
+    depends_on:
+      - "product-db"
+      - "kafka"
+
+  payment-service:
+    build: "./saga-payment-ms"
+    container_name: payment-service
+    restart: always
+    environment:
+      KAFKA_BROKER: ${KAFKA_BROKER}
+      PAYMENT_DATABASE_HOST: ${PAYMENT_DATABASE_HOST}
+      PAYMENT_DATABASE_PORT: ${PAYMENT_DATABASE_PORT}
+      PAYMENT_DATABASE_NAME: ${PAYMENT_DATABASE_NAME}
+      PAYMENT_DATABASE_USERNAME: ${PAYMENT_DATABASE_USERNAME}
+      PAYMENT_DATABASE_PASSWORD: ${PAYMENT_DATABASE_PASSWORD}
+      SPRING_DATASOURCE_URL: ${PAYMENT_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+    ports:
+      - 8091:8091
+    links:
+      - payment-db
+    networks:
+      - orchestrator-saga
+    depends_on:
+      - "payment-db"
+      - "kafka"
+
+  inventory-service:
+    build: "./saga-inventory-ms"
+    container_name: inventory-service
+    restart: always
+    environment:
+      KAFKA_BROKER: ${KAFKA_BROKER}
+      INVENTORY_DATABASE_HOST: ${INVENTORY_DATABASE_HOST}
+      INVENTORY_DATABASE_PORT: ${INVENTORY_DATABASE_PORT}
+      INVENTORY_DATABASE_NAME: ${INVENTORY_DATABASE_NAME}
+      INVENTORY_DATABASE_USERNAME: ${INVENTORY_DATABASE_USERNAME}
+      INVENTORY_DATABASE_PASSWORD: ${INVENTORY_DATABASE_PASSWORD}
+      SPRING_DATASOURCE_URL: ${INVENTORY_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+    ports:
+      - 8092:8092
+    networks:
+      - orchestrator-saga
+    depends_on:
+      - "inventory-db"
+      - "kafka"
+
+networks:
+  orchestrator-saga:
+    driver: bridge
