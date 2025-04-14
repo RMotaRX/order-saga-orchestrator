@@ -1,0 +1,6 @@
+package br.com.product.saga.orchestrator.api.infrastructure.dto;
+
+public record Product(
+    String code,
+    String unitValue
+) { }
